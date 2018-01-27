@@ -9,7 +9,7 @@ grammar HerbertPass2;
     String currentReceiver, currentActor;
     int exprFlag;
 
-    Translator mips = new Translator();
+    Translator mips;
 
     void print(String str){
         System.out.println(str);
@@ -68,6 +68,7 @@ program
     :
         {
             beginScope(); // biggest scope contains actors
+            mips = new Translator(SymbolTable.top.getItemsCount());
 
             mips.putInit(SymbolTable.top);
         }
@@ -83,15 +84,16 @@ actor
     :
         ((ACTOR name = ID) cap = ACTOR_BILBILAK 
             {
-                mips.putActorMailboxHandler((SymbolTableActorItem)SymbolTable.top.get($name.text), SymbolTable.top.getItemsCount());
+                mips.putActorMailboxHandler((SymbolTableActorItem)SymbolTable.top.get($name.text));
 
                 currentActor = $name.text;
                 beginScope();
             }
         EOS+ body END (EOS+ | EOF))
-        { 
+        {
             endScope();
             currentActor = "";
+            mips.actorFinished();
         }
     ;
 
@@ -131,10 +133,15 @@ var_initial_value
 
 receiver
     :
-        ((RECEIVER name = ID) { beginScope(); } 
-        '(' types = receiver_var_def ')' EOS+ { currentReceiver = (new Receiver($name.text, $types.types, null)).toString(); }
+        ((RECEIVER name = ID) { beginScope(); }
+        '(' types = receiver_var_def ')' EOS+
+        {
+            currentReceiver = (new Receiver($name.text, $types.types, null)).toString();
+            mips.beginReceiver((SymbolTableReceiverItem)SymbolTable.top.getPreSymbolTable().get(currentReceiver));
+        }
         receiver_block END 
         {
+            mips.endReceiver();
             endScope();
             currentReceiver = "";
         }

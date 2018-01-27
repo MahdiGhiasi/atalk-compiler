@@ -11,8 +11,11 @@ public class Translator {
     private ArrayList <String> instructions;
 
     int actorCounter = 0;
+    int totalActorsCount;
 
-    public Translator(){
+    public Translator(int totalActorsCount){
+        this.totalActorsCount = totalActorsCount;
+
         instructions = new ArrayList<String>();
         output = new File("out.asm");
         try {
@@ -71,7 +74,7 @@ public class Translator {
         addInst("");
     }
 
-    public void putActorMailboxHandler(SymbolTableActorItem i, int totalActorsCount) {
+    public void putActorMailboxHandler(SymbolTableActorItem i) {
         addInst("# actor " + i.getActor().getName());
         addInst("actor" + actorCounter + "Check:");
         addInst("lw $t0, " + ((SymbolTableGlobalVariableItem)i.getActor().getSymbolTable().get("__head")).getOffset() + "($gp)");
@@ -89,31 +92,39 @@ public class Translator {
         addInst("lw $t2, " + ((SymbolTableGlobalVariableItem)i.getActor().getSymbolTable().get("__mailbox")).getOffset() + "($t0)");
         addInst("");
 
+        List<SymbolTableReceiverItem> items = new ArrayList<>();
         for (SymbolTableItem item : i.getActor().getSymbolTable().items.values()) {
             if (item instanceof SymbolTableReceiverItem) {
-                SymbolTableReceiverItem r = (SymbolTableReceiverItem) item;
-
-                addInst("# receiver " + r.getReceiver().toString());
-                addInst("bnez $t2, actor" + actorCounter + "Receiver" + r.getReceiver().getIndex() + "AfterCheck");
-                addInst("li $s0, " + r.getReceiver().getArgumentsTotalSize());
-                addInst("li $s1, " + ((SymbolTableGlobalVariableItem) i.getActor().getSymbolTable().get("__mailbox")).getOffset());
-                addInst("move $s2, $t0");
-                addInst("li $s3, " + i.getActor().getCapacity());
-                addInst("jal Copy");
-                addInst("sw $s2, " + ((SymbolTableGlobalVariableItem) i.getActor().getSymbolTable().get("__head")).getOffset() + "($gp)");
-                addInst("j receiver" + r.getReceiver().getIndex() + "Body");
-                addInst("");
-                addInst("actor" + actorCounter + "Receiver" + r.getReceiver().getIndex() + "AfterCheck:");
-                addInst("addi $t2, t2, -1");
-                addInst("");
-
+                items.add((SymbolTableReceiverItem)item);
             }
+        }
+
+        items.sort((l, r) -> l.getReceiver().getIndex() - r.getReceiver().getIndex());
+
+        for (SymbolTableReceiverItem r : items) {
+            addInst("# receiver " + r.getReceiver().toString());
+            addInst("bnez $t2, actor" + actorCounter + "Receiver" + r.getReceiver().getIndex() + "AfterCheck");
+            addInst("li $s0, " + r.getReceiver().getArgumentsTotalSize());
+            addInst("li $s1, " + ((SymbolTableGlobalVariableItem) i.getActor().getSymbolTable().get("__mailbox")).getOffset());
+            addInst("move $s2, $t0");
+            addInst("li $s3, " + i.getActor().getCapacity());
+            addInst("jal Copy");
+            addInst("sw $s2, " + ((SymbolTableGlobalVariableItem) i.getActor().getSymbolTable().get("__head")).getOffset() + "($gp)");
+            addInst("j actor" + actorCounter + "Receiver" + r.getReceiver().getIndex() + "Body");
+            addInst("");
+            addInst("actor" + actorCounter + "Receiver" + r.getReceiver().getIndex() + "AfterCheck:");
+            addInst("addi $t2, $t2, -1");
+            addInst("");
         }
 
         //TODO: Fohsh
         addSystemCall(10); //Exit
 
         addInst("");
+    }
+
+    public void actorFinished() {
+        actorCounter++;
     }
 
     public void putFunctions() {
@@ -155,6 +166,17 @@ public class Translator {
         addInst("addi $s0, $s0, -1");
         addInst("bz $zero, CopyLoopBegin");
 
+        addInst("");
+    }
+
+    public void beginReceiver(SymbolTableReceiverItem receiver) {
+        addInst("# Receiver " + receiver.getReceiver().toString());
+
+        addInst("actor" + actorCounter + "Receiver" + receiver.getReceiver().getIndex() + "Body:");
+    }
+
+    public void endReceiver() {
+        addInst("j actor" + ((actorCounter + 1) % totalActorsCount) + "Check");
         addInst("");
     }
 
