@@ -64,10 +64,10 @@ public class Translator {
             SymbolTableGlobalVariableItem head = (SymbolTableGlobalVariableItem)actor.getActor().getSymbolTable().get("__head");
             SymbolTableGlobalVariableItem tail = (SymbolTableGlobalVariableItem)actor.getActor().getSymbolTable().get("__tail");
 
-            addInst("sw $t0, " + head.getOffset() + "($gp)");
-            addInst("sw $t1, " + tail.getOffset() + "($gp)");
+            addInst("sb $t0, " + head.getOffset() + "($gp)");
+            addInst("sb $t1, " + tail.getOffset() + "($gp)");
             addInst("li $t2, " + initReceiver.getReceiver().getIndex());
-            addInst("sw $t2, " + mailbox.getOffset() + "($gp)");
+            addInst("sb $t2, " + mailbox.getOffset() + "($gp)");
             addInst("");
         }
         addInst("");
@@ -77,11 +77,11 @@ public class Translator {
     public void putActorMailboxHandler(SymbolTableActorItem i) {
         addInst("# actor " + i.getActor().getName());
         addInst("actor" + actorCounter + "Check:");
-        addInst("lw $t0, " + ((SymbolTableGlobalVariableItem)i.getActor().getSymbolTable().get("__head")).getOffset() + "($gp)");
-        addInst("lw $t1, " + ((SymbolTableGlobalVariableItem)i.getActor().getSymbolTable().get("__tail")).getOffset() + "($gp)");
+        addInst("lb $t0, " + ((SymbolTableGlobalVariableItem)i.getActor().getSymbolTable().get("__head")).getOffset() + "($gp)");
+        addInst("lb $t1, " + ((SymbolTableGlobalVariableItem)i.getActor().getSymbolTable().get("__tail")).getOffset() + "($gp)");
 
         if (actorCounter == 0) {
-            addInst("bz $k0, dontTerminate");
+            addInst("bnez $k0, dontTerminate");
             addSystemCall(10); //Exit
             addInst("dontTerminate:");
             addInst("li $k0, 1");
@@ -89,7 +89,8 @@ public class Translator {
 
         addInst("beq $t0, $t1, actor" + (actorCounter + 1) % totalActorsCount + "Check");
         addInst("li $k0, 0");
-        addInst("lw $t2, " + ((SymbolTableGlobalVariableItem)i.getActor().getSymbolTable().get("__mailbox")).getOffset() + "($t0)");
+        addInst("add $t0, $t0, $gp");
+        addInst("lb $t2, " + ((SymbolTableGlobalVariableItem)i.getActor().getSymbolTable().get("__mailbox")).getOffset() + "($t0)");
         addInst("");
 
         List<SymbolTableReceiverItem> items = new ArrayList<>();
@@ -102,14 +103,14 @@ public class Translator {
         items.sort((l, r) -> l.getReceiver().getIndex() - r.getReceiver().getIndex());
 
         for (SymbolTableReceiverItem r : items) {
-            addInst("# receiver " + r.getReceiver().toString());
+            addInst("# receiver " + r.getReceiver().toString() + " check");
             addInst("bnez $t2, actor" + actorCounter + "Receiver" + r.getReceiver().getIndex() + "AfterCheck");
             addInst("li $s0, " + r.getReceiver().getArgumentsTotalSize());
             addInst("li $s1, " + ((SymbolTableGlobalVariableItem) i.getActor().getSymbolTable().get("__mailbox")).getOffset());
             addInst("move $s2, $t0");
             addInst("li $s3, " + i.getActor().getCapacity());
             addInst("jal Copy");
-            addInst("sw $s2, " + ((SymbolTableGlobalVariableItem) i.getActor().getSymbolTable().get("__head")).getOffset() + "($gp)");
+            addInst("sb $s2, " + ((SymbolTableGlobalVariableItem) i.getActor().getSymbolTable().get("__head")).getOffset() + "($gp)");
             addInst("j actor" + actorCounter + "Receiver" + r.getReceiver().getIndex() + "Body");
             addInst("");
             addInst("actor" + actorCounter + "Receiver" + r.getReceiver().getIndex() + "AfterCheck:");
@@ -149,22 +150,22 @@ public class Translator {
 
         addInst("CopyLoopBegin:");
 
-        addInst("bz $s0, CopyLoopBodyBegin");
+        addInst("beqz $s0, CopyLoopBodyBegin");
         addInst("jr $ra");
 
         addInst("CopyLoopBodyBegin:");
 
         // s4 <- [s1 + s2]
         addInst("add $s5, $s1, $s2");
-        addInst("lw $s6, $s5");
-        addInst("lw $s6, $s4");
+        addInst("lb $s6, 0($s5)");
+        addInst("sb $s6, 0($s4)");
 
-        addInst("addi $s2, s2, 1");
+        addInst("addi $s2, $s2, 1");
         addInst("rem $s2, $s2, $s3"); // mod of s2
 
         addInst("addi $s4, $s4, 1");
         addInst("addi $s0, $s0, -1");
-        addInst("bz $zero, CopyLoopBegin");
+        addInst("beqz $zero, CopyLoopBegin");
 
         addInst("");
     }
@@ -183,7 +184,7 @@ public class Translator {
     public void addToStack(int x){
         addInst("# adding a number to stack");
         addInst("li $a0, " + x);
-        addInst("sw $a0, 0($sp)");
+        addInst("sb $a0, 0($sp)");
         addInst("addiu $sp, $sp, -4");
         addInst("# end of adding a number to stack");
 
@@ -192,8 +193,8 @@ public class Translator {
     public void addToStack(String s, int adr){
 //        int adr = table.getAddress(s)*(-1);
         addInst("# start of adding variable to stack");
-        addInst("lw $a0, " + adr + "($fp)");
-        addInst("sw $a0, 0($sp)");
+        addInst("lb $a0, " + adr + "($fp)");
+        addInst("sb $a0, 0($sp)");
         addInst("addiu $sp, $sp, -4");
         addInst("# end of adding variable to stack");
     }
@@ -202,7 +203,7 @@ public class Translator {
 //        int adr = table.getAddress(s)*(-1);
         addInst("# start of adding address to stack");
         addInst("addiu $a0, $fp, " + adr);
-        addInst("sw $a0, 0($sp)");
+        addInst("sb $a0, 0($sp)");
         addInst("addiu $sp, $sp, -4");
         addInst("# end of adding address to stack");
     }
@@ -211,7 +212,7 @@ public class Translator {
 //        int adr = table.getAddress(s)*(-1);
         addInst("# start of adding global address to stack");
         addInst("addiu $a0, $gp, " + adr);
-        addInst("sw $a0, 0($sp)");
+        addInst("sb $a0, 0($sp)");
         addInst("addiu $sp, $sp, -4");
         addInst("# end of adding global address to stack");
     }
@@ -231,12 +232,12 @@ public class Translator {
 
     public void assignCommand(){
         addInst("# start of assign");
-        addInst("lw $a0, 4($sp)");
+        addInst("lb $a0, 4($sp)");
         popStack();
-        addInst("lw $a1, 4($sp)");
+        addInst("lb $a1, 4($sp)");
         popStack();
-        addInst("sw $a0, 0($a1)");
-        addInst("sw $a0, 0($sp)");
+        addInst("sb $a0, 0($a1)");
+        addInst("sb $a0, 0($sp)");
         addInst("addiu $sp, $sp, -4");
         popStack();
         addInst("# end of assign");
@@ -245,39 +246,39 @@ public class Translator {
     public void operationCommand(String s){
         addInst("# operation " + s);
         if (s.equals("*")){
-            addInst("lw $a0, 4($sp)");
+            addInst("lb $a0, 4($sp)");
             popStack();
-            addInst("lw $a1, 4($sp)");
+            addInst("lb $a1, 4($sp)");
             popStack();
             addInst("mul $a0, $a0, $a1");
-            addInst("sw $a0, 0($sp)");
+            addInst("sb $a0, 0($sp)");
             addInst("addiu $sp, $sp, -4");
         }
         else if (s.equals("/")){
-            addInst("lw $a0, 4($sp)");
+            addInst("lb $a0, 4($sp)");
             popStack();
-            addInst("lw $a1, 4($sp)");
+            addInst("lb $a1, 4($sp)");
             popStack();
             addInst("div $a0, $a1, $a0");
-            addInst("sw $a0, 0($sp)");
+            addInst("sb $a0, 0($sp)");
             addInst("addiu $sp, $sp, -4");
         }
         else if (s.equals("+")){
-            addInst("lw $a0, 4($sp)");
+            addInst("lb $a0, 4($sp)");
             popStack();
-            addInst("lw $a1, 4($sp)");
+            addInst("lb $a1, 4($sp)");
             popStack();
             addInst("add $a0, $a0, $a1");
-            addInst("sw $a0, 0($sp)");
+            addInst("sb $a0, 0($sp)");
             addInst("addiu $sp, $sp, -4");
         }
         else if (s.equals("-")){
-            addInst("lw $a0, 4($sp)");
+            addInst("lb $a0, 4($sp)");
             popStack();
-            addInst("lw $a1, 4($sp)");
+            addInst("lb $a1, 4($sp)");
             popStack();
             addInst("sub $a0, $a1, $a0");
-            addInst("sw $a0, 0($sp)");
+            addInst("sb $a0, 0($sp)");
             addInst("addiu $sp, $sp, -4");
         }
         addInst("# end of operation " + s);
@@ -285,7 +286,7 @@ public class Translator {
 
     public void write(){
         addInst("# writing");
-        addInst("lw $a0, 4($sp)");
+        addInst("lb $a0, 4($sp)");
         this.addSystemCall(1);
         popStack();
         addInst("addi $a0, $zero, 10");
@@ -296,8 +297,8 @@ public class Translator {
     public void addGlobalToStack(int adr){
 //        int adr = table.getAddress(s)*(-1);
         addInst("# start of adding global variable to stack");
-        addInst("lw $a0, " + adr + "($gp)");
-        addInst("sw $a0, 0($sp)");
+        addInst("lb $a0, " + adr + "($gp)");
+        addInst("sb $a0, 0($sp)");
         addInst("addiu $sp, $sp, -4");
         addInst("# end of adding global variable to stack");
     }
@@ -306,7 +307,7 @@ public class Translator {
 //        int adr = table.getAddress(s)*(-1);
         addInst("# adding a global variable");
         addInst("li $a0, " + x);
-        addInst("sw $a0, " + adr + "($gp)");
+        addInst("sb $a0, " + adr + "($gp)");
         addInst("# end of adding a global variable");
     }
 }
