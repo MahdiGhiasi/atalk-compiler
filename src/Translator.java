@@ -141,7 +141,7 @@ public class Translator {
         putCopyFromQueueFunction();
         putCopyToQueueFunction();
         putActorBufferOverflowError();
-        putIndexOutOfBoundsError();
+        putIndexOutOfBoundError();
 
         addInst("");
     }
