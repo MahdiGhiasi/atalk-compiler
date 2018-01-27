@@ -7,5 +7,6 @@ echo Cleaning .antlr files (if any)...
 del .antlr\*.java
 del .antlr\*.class
 
+
 echo Done!
 pause
