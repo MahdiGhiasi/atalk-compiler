@@ -169,7 +169,7 @@ public class Translator {
         addInst("sb $s6, 0($s4)");
 
         addInst("addi $s2, $s2, 1");
-        addInst("rem $s2, $s2, $s3"); // mod of s2
+        addInst("remu $s2, $s2, $s3"); // mod of s2
 
         addInst("addi $s4, $s4, 1");
         addInst("addi $s0, $s0, -1");
