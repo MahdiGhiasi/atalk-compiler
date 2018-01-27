@@ -116,7 +116,7 @@ public class Translator {
             addInst("li $s1, " + ((SymbolTableGlobalVariableItem) i.getActor().getSymbolTable().get("__mailbox")).getOffset());
             addInst("move $s2, $t0");
             addInst("li $s3, " + i.getActor().getCapacity());
-            addInst("jal Copy");
+            addInst("jal CopyFromQueue");
             addInst("sb $s2, " + ((SymbolTableGlobalVariableItem) i.getActor().getSymbolTable().get("__head")).getOffset() + "($gp)");
             addInst("j actor" + actorCounter + "Receiver" + r.getReceiver().getIndex() + "Body");
             addInst("");
@@ -138,30 +138,59 @@ public class Translator {
     public void putFunctions() {
         addInst("# Functions");
 
-        putCopyFunction();
-        //TODO: ActorBufferOverflowError
+        putCopyFromQueueFunction();
+        putCopyToQueueFunction();
+        putActorBufferOverflowError();
+        putIndexOutOfBoundsError();
 
         addInst("");
     }
 
-    public void putCopyFunction() {
-        // COPY
+    private void putIndexOutOfBoundError() {
+        addInst("# - IndexOutOfBoundError");
+        addInst("IndexOutOfBoundError: ");
+
+        //TODO
+
+        addSystemCall(10); //Exit
+        addInst("");
+    }
+
+    private void putActorBufferOverflowError() {
+        addInst("# - ActorBufferOverflowError");
+        addInst("ActorBufferOverflowError: ");
+
+        //TODO
+
+        addInst("jr $ra");
+        addInst("");
+    }
+
+    private void putCopyToQueueFunction() {
+        addInst("# - Copy To Queue");
+        addInst("CopyToQueue: ");
+
+        //TODO
+    }
+
+    public void putCopyFromQueueFunction() {
+        // Copy From Queue
         // s0: length of data to copy
         // s1: beginning of mailbox
         // s2: start position relative to s1
         // s3: size of mailbox
 
-        addInst("# - Copy");
+        addInst("# - Copy From Queue");
 
-        addInst("Copy:");
+        addInst("CopyFromQueue:");
         addInst("move $s4, $sp"); //dest
 
-        addInst("CopyLoopBegin:");
+        addInst("Copy1LoopBegin:");
 
-        addInst("beqz $s0, CopyLoopBodyBegin");
+        addInst("beqz $s0, Copy1LoopBodyBegin");
         addInst("jr $ra");
 
-        addInst("CopyLoopBodyBegin:");
+        addInst("Copy1LoopBodyBegin:");
 
         // s4 <- [s1 + s2]
         addInst("add $s5, $s1, $s2");
@@ -173,7 +202,7 @@ public class Translator {
 
         addInst("addi $s4, $s4, 1");
         addInst("addi $s0, $s0, -1");
-        addInst("beqz $zero, CopyLoopBegin");
+        addInst("beqz $zero, Copy1LoopBegin");
 
         addInst("");
     }
@@ -196,6 +225,8 @@ public class Translator {
         SymbolTableGlobalVariableItem head = (SymbolTableGlobalVariableItem)actor.getActor().getSymbolTable().get("__head");
         SymbolTableGlobalVariableItem tail = (SymbolTableGlobalVariableItem)actor.getActor().getSymbolTable().get("__tail");
 
+        int labelIndex = getNextUniqueNum();
+
         addInst("lb $t0, " + head.getOffset() + "($gp)");
         addInst("lb $t1, " + tail.getOffset() + "($gp)");
         addInst("lb $t2, " + mailbox.getOffset() + "($gp)");
@@ -203,7 +234,6 @@ public class Translator {
         //increase tail by 1
         addInst("addi $t1, $t1, 1");
 
-        int labelIndex = getNextUniqueNum();
         addInst("bne $t1, $t0, senderCheckSuccess" + labelIndex);
         addInst("jal ActorBufferOverflowError");
         addInst("j senderCheckFinish" + labelIndex);
