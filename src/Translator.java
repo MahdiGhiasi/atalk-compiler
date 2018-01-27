@@ -113,6 +113,49 @@ public class Translator {
         //TODO: Fohsh
         addSystemCall(10); //Exit
 
+        addInst("");
+    }
+
+    public void putFunctions() {
+        addInst("# Functions");
+
+        putCopyFunction();
+
+        addInst("");
+    }
+
+    public void putCopyFunction() {
+        // COPY
+        // s0: length of data to copy
+        // s1: beginning of mailbox
+        // s2: start position relative to s1
+        // s3: size of mailbox
+
+        addInst("# - Copy");
+
+        addInst("Copy:");
+        addInst("move $s4, $sp"); //dest
+
+        addInst("CopyLoopBegin:");
+
+        addInst("bz $s0, CopyLoopBodyBegin");
+        addInst("jr $ra");
+
+        addInst("CopyLoopBodyBegin:");
+
+        // s4 <- [s1 + s2]
+        addInst("add $s5, $s1, $s2");
+        addInst("lw $s6, $s5");
+        addInst("lw $s6, $s4");
+
+        addInst("addi $s2, s2, 1");
+        addInst("rem $s2, $s2, $s3"); // mod of s2
+
+        addInst("addi $s4, $s4, 1");
+        addInst("addi $s0, $s0, -1");
+        addInst("bz $zero, CopyLoopBegin");
+
+        addInst("");
     }
 
     public void addToStack(int x){

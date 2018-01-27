@@ -74,6 +74,7 @@ program
         EOS* actor*
         {
             endScope();
+            mips.putFunctions();
             mips.makeOutput();
         }
     ;
