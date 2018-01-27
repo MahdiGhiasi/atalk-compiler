@@ -68,7 +68,7 @@ program
     :
         {
             beginScope(); // biggest scope contains actors
-            mips = new Translator(SymbolTable.top.getItemsCount());
+            mips = new Translator(SymbolTable.top);
 
             mips.putInit(SymbolTable.top);
         }

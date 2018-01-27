@@ -12,9 +12,12 @@ public class Translator {
 
     int actorCounter = 0;
     int totalActorsCount;
+    SymbolTable rootTable;
+    int uniqueNum = 0;
 
-    public Translator(int totalActorsCount){
-        this.totalActorsCount = totalActorsCount;
+    public Translator(SymbolTable rootTable){
+        this.rootTable = rootTable;
+        this.totalActorsCount = rootTable.getItemsCount();
 
         instructions = new ArrayList<String>();
         output = new File("out.asm");
@@ -23,6 +26,10 @@ public class Translator {
         } catch (Exception e){
             e.printStackTrace();
         }
+    }
+
+    public int getNextUniqueNum() {
+        return ++uniqueNum;
     }
 
     public void addInst(String s) {
@@ -132,6 +139,7 @@ public class Translator {
         addInst("# Functions");
 
         putCopyFunction();
+        //TODO: ActorBufferOverflowError
 
         addInst("");
     }
@@ -180,6 +188,43 @@ public class Translator {
         addInst("j actor" + ((actorCounter + 1) % totalActorsCount) + "Check");
         addInst("");
     }
+
+    public void sendMessage(String actorName, String receiverKey) {
+        SymbolTableActorItem actor = (SymbolTableActorItem)rootTable.get(actorName);
+        SymbolTableReceiverItem receiver = (SymbolTableReceiverItem)actor.getActor().getSymbolTable().get(receiverKey);
+        SymbolTableGlobalVariableItem mailbox = (SymbolTableGlobalVariableItem)actor.getActor().getSymbolTable().get("__mailbox");
+        SymbolTableGlobalVariableItem head = (SymbolTableGlobalVariableItem)actor.getActor().getSymbolTable().get("__head");
+        SymbolTableGlobalVariableItem tail = (SymbolTableGlobalVariableItem)actor.getActor().getSymbolTable().get("__tail");
+
+        addInst("lb $t0, " + head.getOffset() + "($gp)");
+        addInst("lb $t1, " + tail.getOffset() + "($gp)");
+        addInst("lb $t2, " + mailbox.getOffset() + "($gp)");
+
+        //increase tail by 1
+        addInst("addi $t1, $t1, 1");
+
+        int labelIndex = getNextUniqueNum();
+        addInst("bne $t1, $t0, senderCheckSuccess" + labelIndex);
+        addInst("jal ActorBufferOverflowError");
+        addInst("j senderCheckFinish" + labelIndex);
+
+        addInst("senderCheckSuccess" + labelIndex + ":");
+
+        //store receiver number
+        addInst("add $t3, $t2, $gp"); //t3 <- mailbox offset + $gp
+        addInst("add $t3, $t3, $t1"); //t3 <- t3 + tail offset = $gp + mailbox offset + tail offset
+        addInst("li $t4, " + receiver.getReceiver().getIndex());
+        addInst("sb $t4, 0($t3)");
+
+        //save new tail value
+        addInst("sb $t1, " + tail.getOffset() + "($gp)");
+
+        //TODO: arguments
+
+        addInst("senderCheckFinish" + labelIndex + ":");
+        addInst("");
+    }
+
 
     public void addToStack(int x){
         addInst("# adding a number to stack");
