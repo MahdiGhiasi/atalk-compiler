@@ -11,7 +11,7 @@ public class Translator {
     private ArrayList <String> instructions;
     private ArrayList <String> initInstructions;
 
-    boolean isFirstActor = true;
+    int actorCounter = 0;
 
     public Translator(){
         instructions = new ArrayList<String>();
@@ -47,29 +47,30 @@ public class Translator {
 
     public void putActorMailboxHandler(SymbolTableActorItem i) {
         instructions.add("# actor " + i.getActor().getName());
-
+        instructions.add("actor" + actorCounter + "Check:");
         instructions.add("lw $t0, " + ((SymbolTableGlobalVariableItem)i.getActor().getSymbolTable().get("__head")).getOffset() + "($gp)");
         instructions.add("lw $t1, " + ((SymbolTableGlobalVariableItem)i.getActor().getSymbolTable().get("__tail")).getOffset() + "($gp)");
 
-        if (isFirstActor) {
-            instructions.add("bz $k0, 2");
+        if (actorCounter == 0) {
+            instructions.add("bz $k0, dontTerminate");
             addSystemCall(10); //Exit
+            instructions.add("dontTerminate:");
             instructions.add("li $k0, 1");
-
-            isFirstActor = false;
         }
 
-        instructions.add("beq $t0, $t1, NextActorCheck");
+        instructions.add("beq $t0, $t1, actor" + (actorCounter + 1) + "Check");
         instructions.add("li $k0, 0");
         instructions.add("lw $t2, " + ((SymbolTableGlobalVariableItem)i.getActor().getSymbolTable().get("__mailbox")).getOffset() + "($t0)");
         instructions.add("");
+
+        int receiverIndex = 0;
 
         for (SymbolTableItem item : i.getActor().getSymbolTable().items.values()) {
             if (item instanceof SymbolTableReceiverItem) {
                 SymbolTableReceiverItem r = (SymbolTableReceiverItem) item;
 
                 instructions.add("# receiver " + r.getReceiver().toString());
-                instructions.add("bnez $t2, 7");
+                instructions.add("bnez $t2, actor" + actorCounter + "Receiver" + receiverIndex + "After");
                 instructions.add("li $s0, " + r.getReceiver().getArgumentsTotalSize());
                 instructions.add("li $s1, " + ((SymbolTableGlobalVariableItem) i.getActor().getSymbolTable().get("__mailbox")).getOffset());
                 instructions.add("move $s2, $t0");
@@ -77,8 +78,12 @@ public class Translator {
                 instructions.add("jal Copy");
                 instructions.add("sw $s2, " + ((SymbolTableGlobalVariableItem) i.getActor().getSymbolTable().get("__head")).getOffset() + "($gp)");
                 instructions.add("j [location of receiver] #TODO"); //TODO
+                instructions.add("");
+                instructions.add("actor" + actorCounter + "Receiver" + receiverIndex + "After:");
                 instructions.add("addi $t2, t2, -1");
                 instructions.add("");
+
+                receiverIndex++;
             }
         }
 
