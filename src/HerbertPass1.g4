@@ -97,6 +97,14 @@ actor
             if (Integer.parseInt(sizeBil.substring(1, sizeBil.length()-1)) <= 0)
                 print("[Line #" + $cap.line + "] Invalid actor size.");
 
+            try {
+                putGlobalVar("__mailbox", new ArrayType(CharType.getInstance(), sizeBil));
+                putGlobalVar("__head", IntType.getInstance());
+                putGlobalVar("__tail", IntType.getInstance());
+            } catch (ItemAlreadyExistsException e) {
+                print("********** Fatal error occured in Herbert **********");
+            }
+
         }
         EOS+ body END (EOS+ | EOF)
         { 

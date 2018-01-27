@@ -9,6 +9,8 @@ grammar HerbertPass2;
     String currentReceiver, currentActor;
     int exprFlag;
 
+    Translator mips = new Translator();
+
     void print(String str){
         System.out.println(str);
 
@@ -64,15 +66,24 @@ grammar HerbertPass2;
 
 program
     :
-        { beginScope(); } // biggest scope contains actors
+        {
+            beginScope(); // biggest scope contains actors
+
+            mips.putInit();
+        }
         EOS* actor*
-        { endScope(); }
+        {
+            endScope();
+            mips.makeOutput();
+        }
     ;
 
 actor
     :
         ((ACTOR name = ID) cap = ACTOR_BILBILAK 
             {
+                mips.putActorMailboxHandler((SymbolTableActorItem)SymbolTable.top.get($name.text));
+
                 currentActor = $name.text;
                 beginScope();
             }

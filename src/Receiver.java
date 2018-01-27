@@ -25,6 +25,14 @@ public class Receiver {
         return inputTypes.toArray(new Type[inputTypes.size()]);
     }
 
+	public int getArgumentsTotalSize() {
+		int size = 0;
+		for (Type t : inputTypes) {
+			size += t.size();
+		}
+		return size;
+	}
+
 	@Override
 	public String toString() {
         String key = name + " (";
