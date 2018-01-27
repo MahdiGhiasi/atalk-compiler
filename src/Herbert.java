@@ -7,7 +7,7 @@ public class Herbert {
     public static boolean failed = false;
 
 	public static void main(String[] args) throws IOException {
-		ANTLRInputStream reader = new ANTLRFileStream("src/test/17.atk");
+		ANTLRInputStream reader = new ANTLRFileStream("src/test/18.atk");
 
         System.out.println("Compiling started...");
         System.out.println("");

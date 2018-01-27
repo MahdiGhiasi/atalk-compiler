@@ -98,6 +98,8 @@ public class SymbolTable {
 		return pre;
 	}
 
+	public int getItemsCount() { return items.values().size(); }
+
 	SymbolTable pre;
 	public HashMap<String, SymbolTableItem> items;
 	HashMap<Register, Integer> offsets;

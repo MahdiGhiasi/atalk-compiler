@@ -69,7 +69,7 @@ program
         {
             beginScope(); // biggest scope contains actors
 
-            mips.putInit();
+            mips.putInit(SymbolTable.top);
         }
         EOS* actor*
         {
@@ -82,7 +82,7 @@ actor
     :
         ((ACTOR name = ID) cap = ACTOR_BILBILAK 
             {
-                mips.putActorMailboxHandler((SymbolTableActorItem)SymbolTable.top.get($name.text));
+                mips.putActorMailboxHandler((SymbolTableActorItem)SymbolTable.top.get($name.text), SymbolTable.top.getItemsCount());
 
                 currentActor = $name.text;
                 beginScope();

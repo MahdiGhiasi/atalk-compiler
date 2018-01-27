@@ -7,14 +7,19 @@ public class Receiver {
 		this.name = name;
 		inputTypes = new ArrayList<Type>();
     }
-    
-    public Receiver(String name, Type[] inputTypes, SymbolTable symTable) {
+
+	public Receiver(String name, Type[] inputTypes, SymbolTable symTable) {
 		this.name = name;
 		if (inputTypes == null)
 			this.inputTypes = new ArrayList<Type>();
 		else
 			this.inputTypes = new ArrayList<Type>(Arrays.asList(inputTypes));
 		this.symTable = symTable;
+	}
+
+    public Receiver(String name, Type[] inputTypes, SymbolTable symTable, int index) {
+		this(name, inputTypes, symTable);
+		this.index = index;
 	}
 
 	public String getName() {
@@ -43,7 +48,11 @@ public class Receiver {
         return key;
 	}
 
+	public void setIndex(int index) { this.index = index; }
+	public int getIndex() { return this.index; }
+
 	private String name;
 	ArrayList<Type> inputTypes;
 	SymbolTable symTable;
+	int index;
 }

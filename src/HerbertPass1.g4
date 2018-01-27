@@ -7,6 +7,7 @@ grammar HerbertPass1;
 @members{
     Type currentType;
     int loopCounter = 0;
+    int receiverIndexCounter = 0;
 
     void print(String str){
         System.out.println(str);
@@ -44,9 +45,10 @@ grammar HerbertPass1;
     void putReceiver(String name, Type[] types, SymbolTable table) throws ItemAlreadyExistsException {
         SymbolTable.top.put(
             new SymbolTableReceiverItem(
-                new Receiver(name, types, table)
+                new Receiver(name, types, table, receiverIndexCounter)
             )
         );
+        receiverIndexCounter++;
     }
 
     void beginScope() {
@@ -97,6 +99,7 @@ actor
             if (Integer.parseInt(sizeBil.substring(1, sizeBil.length()-1)) <= 0)
                 print("[Line #" + $cap.line + "] Invalid actor size.");
 
+            receiverIndexCounter = 0;
             try {
                 putGlobalVar("__mailbox", new ArrayType(CharType.getInstance(), sizeBil));
                 putGlobalVar("__head", IntType.getInstance());
