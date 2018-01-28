@@ -491,6 +491,17 @@ public class Translator {
         addInst("sb $a0, " + adr + "($gp)");
         addInst("# end of adding a global variable");
     }
+
+    public void printInteger(int x) {
+        addInst("# print contant integer");
+        addInst("li $a0, " + x);
+        this.addSystemCall(1);
+    }
+
+    public void printInteger() { // prints integer located at $a0
+        addInst("# print integer");
+        this.addSystemCall(1);
+    }
 }
 
 
