@@ -167,20 +167,45 @@ public class Translator {
     }
 
     private void putCopyToQueueFunction() {
-        addInst("# - Copy To Queue");
+        // Copy From Stack To Mailbox
+        // s0: length of data to copy
+        // s1: beginning of mailbox
+        // s2: size of mailbox
+        // s3: tail of mailbox
+
+        //NOTE: This really is $sp, don't change it!
+
+        addInst("# - Copy From Stack To Mailbox");
         addInst("CopyToQueue: ");
 
-        //TODO
+        addInst("add $s4, $sp, $s0"); // $s4 <- $sp + length
+
+        addInst("CopyToQueueLoopBegin:");
+        addInst("bne $s4, $sp, CopyToQueueLoopBodyBegin");
+        addInst("jr $ra");
+
+        addInst("CopyToQueueLoopBodyBegin:");
+        addInst("lb $s5, 0($s4)"); //$s5 <- M[$s4]
+        addInst("add $s6, $s3, $s1"); //$s6 <- tail + beginning of mailbox
+        addInst("sb $s5, 0($s6)"); //M[$s6] <- $s5
+
+        addInst("addi $s3, $s3, 1"); //$s3++
+        addInst("remu $s3, $s3, $s2"); // tail <- tail mod size
+
+        addInst("addi $s4, $s4, -1"); // $s4--
+        addInst("j CopyToQueueLoopBegin");
     }
 
     public void putCopyFromQueueFunction() {
-        // Copy From Queue
+        //TODO: Change this from $sp to whatever necessary
+
+        // Copy From Mailbox To Local Variable Space
         // s0: length of data to copy
         // s1: beginning of mailbox
         // s2: start position relative to s1
         // s3: size of mailbox
 
-        addInst("# - Copy From Queue");
+        addInst("# - Copy From Mailbox To Local Variable Space");
 
         addInst("CopyFromQueue:");
         addInst("move $s4, $sp"); //dest
@@ -231,12 +256,26 @@ public class Translator {
         addInst("lb $t1, " + tail.getOffset() + "($gp)");
         addInst("lb $t2, " + mailbox.getOffset() + "($gp)");
 
-        //increase tail by 1
-        addInst("addi $t1, $t1, 1");
+        //Check if enough space in mailbox
+        // used space ($t3) = head < tail ? tail - head : total - head + tail
+        // free space ($t4) = total - 1 - used space
+        addInst("bltu $t0, $t1, senderCheckL1_" + labelIndex); // head < tail => jump
+        addInst("addi $t3, $t1, " + actor.getCapacity()); //$t3 <- total + tail
+        addInst("sub $t3, $t3, $t0"); //$t3 <- $t3 - head
+        addInst("j senderCheckL2_" + labelIndex);
+        addInst("senderCheckL1_" + labelIndex + ":");
+        addInst("sub $t3, $t1, $t0"); //$t3 <- tail - head
+        addInst("senderCheckL2_" + labelIndex + ":");
 
-        addInst("bne $t1, $t0, senderCheckSuccess" + labelIndex);
+        addInst("li $t4, " + (actor.getCapacity() - 1));
+        addInst("sub $t4, $t4, $t3"); // $t4 <- $t4 - used space
+
+        addInst("li $t5, " + (receiver.getReceiver().getArgumentsTotalSize() + 1));
+        addInst("bleu $t5, $t4, senderCheckSuccess" + labelIndex); // 1 + arguments <= free space: then continue
         addInst("jal ActorBufferOverflowError");
         addInst("j senderCheckFinish" + labelIndex);
+
+        //Finish checking mailbox space
 
         addInst("senderCheckSuccess" + labelIndex + ":");
 
@@ -246,10 +285,32 @@ public class Translator {
         addInst("li $t4, " + receiver.getReceiver().getIndex());
         addInst("sb $t4, 0($t3)");
 
-        //save new tail value
-        addInst("sb $t1, " + tail.getOffset() + "($gp)");
+        //increase tail
+        addInst("addi $t1, $t1, 1");
 
-        //TODO: arguments
+        //BEGIN arguments
+
+        // CopyToQueue
+        // s0: length of data to copy
+        // s1: beginning of mailbox
+        // s2: size of mailbox
+        // s3: tail of mailbox
+
+        addInst("li $s0, " + receiver.getReceiver().getArgumentsTotalSize());
+        addInst("addiu $s1, $gp, " + mailbox.getOffset());
+        addInst("li $s2, " + actor.getCapacity());
+        addInst("move $s3, $t1");
+
+        addInst("jal CopyToQueue");
+
+
+        //clear stack
+        addInst("addiu $sp, $sp, " + receiver.getReceiver().getArgumentsTotalSize());
+
+        //END arguments
+
+        //save new tail value
+        addInst("sb $s3, " + tail.getOffset() + "($gp)");
 
         addInst("senderCheckFinish" + labelIndex + ":");
         addInst("");
