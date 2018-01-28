@@ -319,7 +319,7 @@ public class Translator {
     public void writeInteger() {
         addInst("");
         addInst("# write integer");
-        pushInt(12345); //test
+        //pushInt(808530488); //test
         popInt(false);
         addInst("");
         addInst("move $a0, $v0");
@@ -385,12 +385,12 @@ public class Translator {
     public void popChar(boolean wannaPopTwo) {          // will save into v0 or (v1 and v0)
         
         if(wannaPopTwo) {
-            addInst("lb $v1, 0($sp)");
-            addInst("lb $v0, 1($sp)");
+            addInst("lb $v1, 1($sp)");
+            addInst("lb $v0, 2($sp)");
             addInst("addiu $sp, $sp, 2");
         }
         else {
-            addInst("lb $v0, 0($sp)");
+            addInst("lb $v0, 1($sp)");
             addInst("addiu $sp, $sp, 1");
         }
     }
@@ -403,8 +403,8 @@ public class Translator {
             addInst("li $s1, 0");
             for(int i = 0; i < 4; i++) {
                 addInst("sll $s1, $s1, 8");
-                addInst("lb $s0, 0($sp)");
-                addInst("add $s1, $s1, $s0");
+                addInst("lb $s0, 1($sp)");
+                addInst("addu $s1, $s1, $s0");
                 addInst("addiu $sp, $sp, 1");
             }
             if(rep == 1)
