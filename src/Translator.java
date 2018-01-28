@@ -256,46 +256,91 @@ public class Translator {
     }
 
 
-    public void addToStack(int x){
+    public void addToStack(byte x){
         addInst("# adding a number to stack");
         addInst("li $a0, " + x);
         addInst("sb $a0, 0($sp)");
-        addInst("addiu $sp, $sp, -4");
+        addInst("addiu $sp, $sp, -1");
         addInst("# end of adding a number to stack");
-
     }
 
-    public void addToStack(String s, int adr){
+    public void addToStack(String s, int adr){                      // need changes
 //        int adr = table.getAddress(s)*(-1);
         addInst("# start of adding variable to stack");
         addInst("lb $a0, " + adr + "($fp)");
         addInst("sb $a0, 0($sp)");
-        addInst("addiu $sp, $sp, -4");
+        addInst("addiu $sp, $sp, -1");
         addInst("# end of adding variable to stack");
     }
 
-    public void addAddressToStack(String s, int adr) {
+    public void addAddressToStack(String s, int adr) {              // need changes
 //        int adr = table.getAddress(s)*(-1);
         addInst("# start of adding address to stack");
         addInst("addiu $a0, $fp, " + adr);
         addInst("sb $a0, 0($sp)");
-        addInst("addiu $sp, $sp, -4");
+        addInst("addiu $sp, $sp, -1");
         addInst("# end of adding address to stack");
     }
 
-    public void addGlobalAddressToStack(String s, int adr){
+    public void addGlobalAddressToStack(String s, int adr){         // need changes
 //        int adr = table.getAddress(s)*(-1);
         addInst("# start of adding global address to stack");
         addInst("addiu $a0, $gp, " + adr);
         addInst("sb $a0, 0($sp)");
-        addInst("addiu $sp, $sp, -4");
+        addInst("addiu $sp, $sp, -1");
         addInst("# end of adding global address to stack");
     }
 
-    public void popStack(){
+    public void pushInt(int x) {
+        byte[] result = new byte[4];
+        result[0] = (byte)((x & 0xFF000000) >> 24);
+        result[1] = (byte)((x & 0x00FF0000) >> 16);
+        result[2] = (byte)((x & 0x0000FF00) >> 8);
+        result[3] = (byte)(x & 0x000000FF);
+        for(int i = 3; i >= 0; i--) addToStack(result[i]);
+    }
+
+    public void pushString(String x) {
+        for(int i = 0; i < x.length(); i++)
+            addToStack((byte)x.charAt(i));
+    }
+
+    public void popStack() {
         addInst("# pop stack");
         addInst("addiu $sp, $sp, 4");
         addInst("# end of pop stack");
+    }
+
+    public void popChar(boolean wannaPopTwo) {          // will save into v0 or (v1 and v0)
+        
+        if(wannaPopTwo) {
+            addInst("lb $v1, 0($sp)");
+            addInst("lb $v0, 1($sp)");
+            addInst("addiu $sp, $sp, 2");
+        }
+        else {
+            addInst("lb $v0, 0($sp)");
+            addInst("addiu $sp, $sp, 1");
+        }
+    }
+
+    public void popInt(boolean wannaPopTwo) {          // will save into v0 or (v1 and v0)
+        int rep = 1;
+        if(wannaPopTwo)
+            rep++;
+        for(; rep > 0; rep--) {
+            addInst("li $s1, 0");
+            for(int i = 0; i < 4; i++) {
+                addInst("sll $s1, $s1, 1");
+                addInst("lb $s0, 0($sp)");
+                addInst("add $s1, $s1, $s0");
+                addInst("addiu $sp, $sp, 1");
+            }
+            if(rep == 1)
+                addInst("move $v0, $s1");
+            else
+                addInst("move $v1, $s1");
+        }
     }
 
     public void addSystemCall(int x){
