@@ -319,7 +319,7 @@ public class Translator {
     public void writeInteger() {
         addInst("");
         addInst("# write integer");
-        //pushInt(12345); //test
+        pushInt(12345); //test
         popInt(false);
         addInst("");
         addInst("move $a0, $v0");
@@ -402,7 +402,7 @@ public class Translator {
         for(; rep > 0; rep--) {
             addInst("li $s1, 0");
             for(int i = 0; i < 4; i++) {
-                addInst("sll $s1, $s1, 1");
+                addInst("sll $s1, $s1, 8");
                 addInst("lb $s0, 0($sp)");
                 addInst("add $s1, $s1, $s0");
                 addInst("addiu $sp, $sp, 1");
