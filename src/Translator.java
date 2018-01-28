@@ -316,6 +316,16 @@ public class Translator {
         addInst("");
     }
 
+    public void writeInteger() {
+        addInst("");
+        addInst("# write integer");
+        //pushInt(12345); //test
+        popInt(false);
+        addInst("");
+        addInst("move $a0, $v0");
+
+        printInteger();
+    }
 
     public void addToStack(byte x){
         addInst("# adding a number to stack");
@@ -493,13 +503,11 @@ public class Translator {
     }
 
     public void printInteger(int x) {
-        addInst("# print contant integer");
         addInst("li $a0, " + x);
         this.addSystemCall(1);
     }
 
     public void printInteger() { // prints integer located at $a0
-        addInst("# print integer");
         this.addSystemCall(1);
     }
 }

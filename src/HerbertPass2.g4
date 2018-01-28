@@ -556,7 +556,12 @@ lvl1 returns [Type return_type]
 
 write_function
     :
-        (WRITE '(' expression ')' EOS+)
+        (WRITE '(' t=expression ')' EOS+)
+        {
+            if ($t.return_type instanceof IntType)
+                mips.writeInteger();
+            //TODO: others
+        }
     ;
 
 read_function returns [Type return_type] 
