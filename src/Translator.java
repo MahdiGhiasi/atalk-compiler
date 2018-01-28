@@ -404,7 +404,7 @@ public class Translator {
             for(int i = 0; i < 4; i++) {
                 addInst("sll $s1, $s1, 8");
                 addInst("lb $s0, 0($sp)");
-                addInst("add $s1, $s1, $s0");
+                addInst("addu $s1, $s1, $s0");
                 addInst("addiu $sp, $sp, 1");
             }
             if(rep == 1)
