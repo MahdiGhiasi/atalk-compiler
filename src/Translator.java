@@ -363,6 +363,7 @@ public class Translator {
     }
 
     public void pushInt(int x) {
+        addInst("# pushing " + x);
         byte[] result = new byte[4];
         result[0] = (byte)((x & 0xFF000000) >> 24);
         result[1] = (byte)((x & 0x00FF0000) >> 16);
@@ -404,7 +405,8 @@ public class Translator {
             for(int i = 0; i < 4; i++) {
                 addInst("sll $s1, $s1, 8");
                 addInst("lb $s0, 1($sp)");
-                addInst("addu $s1, $s1, $s0");
+                addInst("andi $s0, $s0, 255");
+                addInst("add $s1, $s1, $s0");
                 addInst("addiu $sp, $sp, 1");
             }
             if(rep == 1)

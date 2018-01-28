@@ -6,8 +6,9 @@
 actor Program<10>
 	char var
 	receiver init()
-		int v = 5
-		write (12343)
+		int v = 4
+		int u = 9
+		write (v)
 	end
 end
 
@@ -26,11 +27,11 @@ actor Program2<10>
 			begin
 				char var = '3'
 			end
-			write(var) # Writes 2
+			write(555) # Writes 2
 		end
 		if 1
 			char var = '4'
-			write(var) # Writes 4
+			write(666) # Writes 4
 		end
 		write(var) # Writes 1
 	end
