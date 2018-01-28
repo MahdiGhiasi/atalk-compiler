@@ -512,7 +512,13 @@ lvl1 returns [Type return_type]
 		('('t1=lvl10')') { exprFlag = 1;  $return_type = $t1.return_type;  }
         |
         (
-            t=initial_value { exprFlag = 1; $return_type = $t.return_type; } 
+            t=initial_value {
+                exprFlag = 1; $return_type = $t.return_type;
+                if($t.return_type instanceof IntType)
+                    mips.pushInt(Integer.parseInt($t.text));
+                else
+                    mips.pushString($t.text);
+            } 
             | (var_name = ID { varType = checkVariableExistance($var_name.text, $var_name.line); depth = 0; } ((ARRAY_BILBILAK | ('[' expression ']')){ depth++; })*)
                 {
                     Type baseType = varType;
