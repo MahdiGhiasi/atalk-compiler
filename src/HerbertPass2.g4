@@ -217,6 +217,8 @@ send
                     {
                         print("[Line #" + $sdr.line + "] 'sender' can't be called from init()");
                     }
+
+                    //Sender sendMessage not implemented yet
                 }
             ) |
             ((SELF SENDTO receiver_name=ID '(' (ex=expression { types.add($ex.return_type); } (',' ex=expression { types.add($ex.return_type); })*)? ')' EOS+)
@@ -231,6 +233,9 @@ send
 
                     if (receiver == null) {
                         print("[Line #" + $receiver_name.line + "] Receiver '" + receiverKey + "' does not exist in actor " + currentActor + ".");
+                    }
+                    else {
+                        mips.sendMessage(currentActor, receiverKey);
                     }
                 }
             ) |
@@ -253,6 +258,9 @@ send
                         SymbolTableItem receiver = theActorItself.getSymbolTable().get(receiverKey);
                         if (receiver == null) {
                             print("[Line #" + $receiver_name.line + "] Receiver '" + receiverKey + "' does not exist in actor " + currentActor + ".");
+                        }
+                        else {
+                            mips.sendMessage(theActorItself.getName(), receiverKey);
                         }
                     }
                 }
