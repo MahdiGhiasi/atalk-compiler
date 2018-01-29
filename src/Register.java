@@ -16,6 +16,8 @@ public class Register {
 	public static final Register TEMP9 = new Register("$t9"); 
 	public static final Register SYS_REG = new Register("$v0");
 	public static final Register ZERO = new Register("$zero");
+	public static final Register K0 = new Register("$k0");
+	public static final Register K1 = new Register("$k1");
 
 	public Register(String registerName) {
 		this.registerName = registerName;

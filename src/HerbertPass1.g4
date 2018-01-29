@@ -20,7 +20,7 @@ grammar HerbertPass1;
         SymbolTable.top.put(
             new SymbolTableLocalVariableItem(
                 new Variable(name, type),
-                SymbolTable.top.getOffset(Register.SP)
+                SymbolTable.top.getOffset(Register.K1)
             )
         );
     }

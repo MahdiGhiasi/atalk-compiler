@@ -319,17 +319,26 @@ expression returns [Type return_type]
 lvl10 returns [Type return_type] 
 @init {
     boolean mismatchFlag = false;
+    ArrayList<SymbolTableVariableItemBase> assignItems = new ArrayList<SymbolTableVariableItemBase>();
 }
     :
 		(t = lvl9 { $return_type = $t.return_type; })
 		|
         (
             ( { exprFlag = 0; mismatchFlag = false; } t1=lvl9
+            {
+                SymbolTableItem vv1 = SymbolTable.top.get($t1.text);
+                if (vv1 != null && vv1 instanceof SymbolTableVariableItemBase)
+                    assignItems.add((SymbolTableVariableItemBase)vv1);
+            }
             ('=' t2=lvl9 
                 { 
                     if (!$t1.return_type.equals($t2.return_type)) {
                         mismatchFlag = true;
-                    } 
+                    }
+                    SymbolTableItem vv2 = SymbolTable.top.get($t2.text);
+                    if (vv2 != null && vv2 instanceof SymbolTableVariableItemBase)
+                        assignItems.add((SymbolTableVariableItemBase)vv2);
                 }
             )* eq='='
                 {
@@ -351,6 +360,8 @@ lvl10 returns [Type return_type]
                 else {
                     $return_type = $t1.return_type;
                 }
+
+                mips.assign(assignItems.toArray(new SymbolTableVariableItemBase[assignItems.size()]), $t1.return_type);
             }
         )
     ;
@@ -588,7 +599,7 @@ lvl1 returns [Type return_type]
                             remDepth--;
                             baseType = new ArrayType(baseType, 1);
                         }
-                        mips.pushVariable($var_name.text, baseType);             // must be written
+                        mips.pushVariable((SymbolTableVariableItemBase)SymbolTable.top.get($var_name.text));             // must be written
                         $return_type = baseType;
                     }
                 } 

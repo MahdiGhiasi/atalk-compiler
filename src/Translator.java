@@ -57,6 +57,7 @@ public class Translator {
     public void putInit(SymbolTable table) {
         addInst("");
         addInst("li $k0, 1");
+        addInst("addi $k1, $gp, " + table.getOffset(Register.GP) + 100);
         addInst("");
         addInst("# put init message in all mailboxes");
         addInst("li $t0, 0");
@@ -211,8 +212,6 @@ public class Translator {
     }
 
     public void putCopyFromQueueFunction() {
-        //TODO: Change this from $sp to whatever necessary
-
         // Copy From Mailbox To Local Variable Space
         // s0: length of data to copy
         // s1: beginning of mailbox
@@ -222,7 +221,7 @@ public class Translator {
         addInst("# - Copy From Mailbox To Local Variable Space");
 
         addInst("CopyFromQueue:");
-        addInst("move $s4, $sp"); //dest
+        addInst("move $s4, $k1"); //dest
 
         addInst("Copy1LoopBegin:");
 
@@ -393,7 +392,9 @@ public class Translator {
     }
 
     public void pushIntReg(String reg) {
-        addInst("lw $a0, 0($gp)"); //backup M[0]
+        addInst("# push int register " + reg + " to stack");
+
+        addInst("lw $a0, 0($gp)"); //backup M[$gp]
         addInst("sw " + reg + ", 0($gp)");
         for (int i = 0; i < 4; i++) {
             addInst("addi $a1, $gp, " + i);
@@ -401,7 +402,36 @@ public class Translator {
             addInst("sb $a2, " + (-i) + "($sp)");
         }
         addInst("addi $sp, $sp, -4");
-        addInst("sw $a0, 0($gp)"); //restore M[0]
+        addInst("sw $a0, 0($gp)"); //restore M[$gp]
+        addInst("");
+    }
+
+    public void pushCharReg(String reg) {
+        addInst("# push char register " + reg + " to stack");
+
+        addInst("sb " + reg + " 0($sp)");
+        addInst("addi $sp, $sp, -1");
+        addInst("");
+    }
+
+    public void assignIntVar(String srcReg, SymbolTableVariableItemBase v) {
+        addInst("# assign int variable " + v.getVariable().getName() + " from register " + srcReg);
+
+        addInst("lw $a0, 0($gp)"); //backup M[$gp]
+        addInst("sw " + srcReg + ", 0($gp)");
+        for (int i = 0; i < 4; i++) {
+            addInst("addi $a1, $gp, " + i);
+            addInst("lb $a2, 0($a1)");
+            addInst("sb $a2, " + (v.getOffset() + i) + "(" + v.getBaseRegister().toString() + ")");
+        }
+        addInst("sw $a0, 0($gp)"); //restore M[$gp]
+        addInst("");
+    }
+
+    public void assignCharVar(String srcReg, SymbolTableVariableItemBase v) {
+        addInst("# assign char variable " + v.getVariable().getName() + " from register " + srcReg);
+        addInst("sb " + srcReg + " " + v.getOffset() + "(" + v.getBaseRegister().toString() + ")");
+        addInst("");
     }
 
     public void pushString(String x) {
@@ -448,11 +478,19 @@ public class Translator {
         }
     }
 
-    public void pushVariable(String name, Type baseType) {
+    public void pushVariable(SymbolTableVariableItemBase v) {
+        addInst("# push variable " + v.getVariable().getName());
 
+        for (int i = 0; i < v.getSize(); i++) {
+            addInst("lb $t0, " + (v.getOffset() + i) + "(" + v.getBaseRegister().toString() + ")");
+            addInst("sb $t0, " + (-i) + "($sp)");
+        }
+        addInst("addi $sp, $sp, " + (-v.getSize()));
+        addInst("");
     }
 
     public void doOperation(String op, String out) {
+        addInst("# do operation " + op + " for type " + out);
         if (out.equals("int")) {
             if (op.equals("+")) {
                 addInst("add $t0, $v0, $v1");
@@ -462,6 +500,27 @@ public class Translator {
                 addInst("sub $t0, $v0, $v1");
                 pushIntReg("$t0");
             }
+        }
+        addInst("");
+    }
+
+    public void assign(SymbolTableVariableItemBase[] variables, Type type) {
+        if (type instanceof IntType) {
+            popInt(false);
+
+            for (SymbolTableVariableItemBase v : variables) {
+                assignIntVar("$v0", v);
+            }
+        }
+        else if (type instanceof CharType) {
+            popChar(false);
+
+            for (SymbolTableVariableItemBase v : variables) {
+                assignCharVar("$v0", v);
+            }
+        }
+        else {
+            addInst("##################### assignment of type " + type.toString() + " not supported ###############################");
         }
     }
 
