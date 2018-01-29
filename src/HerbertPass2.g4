@@ -363,6 +363,8 @@ lvl9 returns [Type return_type]
             { 
                 exprFlag = 1; //print("l9");
                 if (($t1.return_type instanceof IntType) && ($t2.return_type instanceof IntType)) {
+                    mips.popInt(true);
+                    mips.doOperation($op.text, "int");
                     $return_type = IntType.getInstance();
                 }
                 else if (($t1.return_type instanceof NoType) || ($t2.return_type instanceof NoType)) {
@@ -383,6 +385,8 @@ lvl8 returns [Type return_type]
             { 
                 exprFlag = 1; //print("l8");
                 if (($t1.return_type instanceof IntType) && ($t2.return_type instanceof IntType)) {
+                    mips.popInt(true);
+                    mips.doOperation($op.text, "int");
                     $return_type = IntType.getInstance();
                 } 
                 else if (($t1.return_type instanceof NoType) || ($t2.return_type instanceof NoType)) {
@@ -403,9 +407,19 @@ lvl7 returns [Type return_type]
             { 
                 exprFlag = 1; //print("l7");
                 
-                if ((($t1.return_type instanceof IntType) && ($t2.return_type instanceof IntType)) ||
-                    (($t1.return_type instanceof CharType) && ($t2.return_type instanceof CharType)) ||
-                    (IsString($t1.return_type) && IsString($t2.return_type))) {
+                if (($t1.return_type instanceof IntType) && ($t2.return_type instanceof IntType)) {
+                    mips.popInt(true);
+                    mips.doOperation($op.text, "int");
+                    $return_type = IntType.getInstance();
+                }
+                else if (($t1.return_type instanceof CharType) && ($t2.return_type instanceof CharType)) {
+                    mips.popChar(true);
+                    mips.doOperation($op.text, "int");
+                    $return_type = IntType.getInstance();
+                }
+                else if (IsString($t1.return_type) && IsString($t2.return_type)) {
+                    // hmm this operation had not been considered
+                    mips.pushInt(0);            // push false :)
                     $return_type = IntType.getInstance();
                 } 
                 else if (($t1.return_type instanceof NoType) || ($t2.return_type instanceof NoType)) {
@@ -425,8 +439,14 @@ lvl6 returns [Type return_type]
         (t1=lvl5 ( op=('<' | '>') t2=lvl5)+) { exprFlag = 1; }
             { 
                 exprFlag = 1; //print("l6");
-                if ((($t1.return_type instanceof IntType) && ($t2.return_type instanceof IntType)) ||
-                    (($t1.return_type instanceof CharType) && ($t2.return_type instanceof CharType))) {
+                if (($t1.return_type instanceof IntType) && ($t2.return_type instanceof IntType)) {
+                    mips.popInt(true);
+                    mips.doOperation($op.text, "int");
+                    $return_type = $t1.return_type;
+                 }
+                else if (($t1.return_type instanceof CharType) && ($t2.return_type instanceof CharType)) {
+                    mips.popChar(true);
+                    mips.doOperation($op.text, "char");
                     $return_type = $t1.return_type;
                 } 
                 else if (($t1.return_type instanceof NoType) || ($t2.return_type instanceof NoType)) {
@@ -449,16 +469,34 @@ lvl5 returns [Type return_type]
                 Type stringType = new ArrayType(CharType.getInstance(), 1);
                 
                 if (($t1.return_type instanceof IntType) && ($t2.return_type instanceof IntType)) {
+                    mips.popInt(true);
+                    mips.doOperation($op.text, "int");
                     $return_type = IntType.getInstance(); // Int - Int , Int + Int => Int
                 } 
-                else if (($op.text.equals("-")) && (($t2.return_type instanceof IntType) && ($t1.return_type instanceof CharType))) { 
+                else if (($op.text.equals("-")) && (($t2.return_type instanceof IntType) && ($t1.return_type instanceof CharType))) {
+                    mips.popInt(false);
+                    mips.addInst("move $" + "v1, $" + "v0");
+                    mips.popChar(false);
+                    mips.doOperation("+", "char");
                     $return_type = CharType.getInstance(); // Char - Int => Char
                 }
-                else if (($op.text.equals("+")) && ((($t1.return_type instanceof IntType) && ($t2.return_type instanceof CharType)) || 
-                         (($t2.return_type instanceof IntType) && ($t1.return_type instanceof CharType)))) {
+                else if ($op.text.equals("+")) {
+                    if(($t1.return_type instanceof IntType) && ($t2.return_type instanceof CharType)) {
+                        mips.popChar(false);
+                        mips.addInst("move $" + "v1, $" + "v0");
+                        mips.popInt(false);
+                        mips.doOperation("+", "char");
+                    }
+                    else if(($t2.return_type instanceof IntType) && ($t1.return_type instanceof CharType)) {
+                        mips.popInt(false);
+                        mips.addInst("move $" + "v1, $" + "v0");
+                        mips.popChar(false);
+                        mips.doOperation("+", "char");
+                    }
                     $return_type = CharType.getInstance(); // Char + Int , Int + Char => Char
                 }
                 else if (($op.text.equals("+")) && (IsString($t1.return_type) || ($t1.return_type instanceof CharType)) && (IsString($t2.return_type) || ($t2.return_type instanceof CharType))) {
+                    // no need to pop + concat + push, just watch and enjoy
                     $return_type = stringType; // Char + Char , String + Char , Char + String => String
                 } 
                 else if (($t1.return_type instanceof NoType) || ($t2.return_type instanceof NoType)) {
@@ -479,6 +517,8 @@ lvl4 returns [Type return_type]
             {
                 exprFlag = 1;//print("l4");
                 if (($t1.return_type instanceof IntType) && ($t2.return_type instanceof IntType)) {
+                    mips.popInt(true);
+                    mips.doOperation($op.text, "int");
                     $return_type = IntType.getInstance();
                 } 
                 else if (($t1.return_type instanceof NoType) || ($t2.return_type instanceof NoType)) {
@@ -499,6 +539,8 @@ lvl3 returns [Type return_type]
             {
                 exprFlag = 1;//print("l3");
                 if ($t1.return_type instanceof IntType) {
+                    mips.popInt(false);
+                    mips.doOperation($op.text, "int");
                     $return_type = IntType.getInstance();
                 } 
                 else if ($t1.return_type instanceof NoType) {
@@ -546,7 +588,7 @@ lvl1 returns [Type return_type]
                             remDepth--;
                             baseType = new ArrayType(baseType, 1);
                         }
-
+                        mips.pushVariable($var_name.text, baseType);             // must be written
                         $return_type = baseType;
                     }
                 } 

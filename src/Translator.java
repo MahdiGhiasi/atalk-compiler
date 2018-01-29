@@ -416,6 +416,14 @@ public class Translator {
         }
     }
 
+    public void pushVariable(String name, Type baseType) {
+
+    }
+
+    public void doOperation(String op, String out) {
+
+    }
+
     public void addSystemCall(int x){
         addInst("# start syscall " + x);
         addInst("li $v0, " + x);
