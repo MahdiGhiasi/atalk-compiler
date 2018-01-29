@@ -91,11 +91,11 @@ public class Translator {
             addInst("bnez $k0, dontTerminate");
             addSystemCall(10); //Exit
             addInst("dontTerminate:");
-            addInst("li $k0, 1");
+            addInst("li $k0, 0");
         }
 
         addInst("beq $t0, $t1, actor" + (actorCounter + 1) % totalActorsCount + "Check");
-        addInst("li $k0, 0");
+        addInst("li $k0, 1");
         addInst("add $t0, $t0, $gp");
         addInst("lb $t2, " + ((SymbolTableGlobalVariableItem)i.getActor().getSymbolTable().get("__mailbox")).getOffset() + "($t0)");
         addInst("");
@@ -111,11 +111,25 @@ public class Translator {
 
         for (SymbolTableReceiverItem r : items) {
             addInst("# receiver " + r.getReceiver().toString() + " check");
+
+            // Copy From Mailbox To Local Variable Space
+            // s0: length of data to copy
+            // s1: beginning of mailbox
+            // s2: start position relative to s1
+            // s3: size of mailbox
+
             addInst("bnez $t2, actor" + actorCounter + "Receiver" + r.getReceiver().getIndex() + "AfterCheck");
             addInst("li $s0, " + r.getReceiver().getArgumentsTotalSize());
+
             addInst("li $s1, " + ((SymbolTableGlobalVariableItem) i.getActor().getSymbolTable().get("__mailbox")).getOffset());
-            addInst("move $s2, $t0");
+            addInst("add $s1, $s1, $gp");
+
+            addInst("lb $t0, " + ((SymbolTableGlobalVariableItem)i.getActor().getSymbolTable().get("__head")).getOffset() + "($gp)");
+            addInst("addi $s2, $t0, 1");
+
             addInst("li $s3, " + i.getActor().getCapacity());
+            addInst("remu $s2, $s2, $s3"); // head <- head mod size
+
             addInst("jal CopyFromQueue");
             addInst("sb $s2, " + ((SymbolTableGlobalVariableItem) i.getActor().getSymbolTable().get("__head")).getOffset() + "($gp)");
             addInst("j actor" + actorCounter + "Receiver" + r.getReceiver().getIndex() + "Body");
@@ -212,7 +226,7 @@ public class Translator {
 
         addInst("Copy1LoopBegin:");
 
-        addInst("beqz $s0, Copy1LoopBodyBegin");
+        addInst("bnez $s0, Copy1LoopBodyBegin");
         addInst("jr $ra");
 
         addInst("Copy1LoopBodyBegin:");
@@ -223,7 +237,7 @@ public class Translator {
         addInst("sb $s6, 0($s4)");
 
         addInst("addi $s2, $s2, 1");
-        addInst("remu $s2, $s2, $s3"); // mod of s2
+        addInst("remu $s2, $s2, $s3"); // head <- head mod size
 
         addInst("addi $s4, $s4, 1");
         addInst("addi $s0, $s0, -1");
@@ -251,6 +265,8 @@ public class Translator {
         SymbolTableGlobalVariableItem tail = (SymbolTableGlobalVariableItem)actor.getActor().getSymbolTable().get("__tail");
 
         int labelIndex = getNextUniqueNum();
+
+        addInst("# sendMessage to " + actor.getActor().getName() + "." + receiverKey + " - unique id = " + labelIndex);
 
         addInst("lb $t0, " + head.getOffset() + "($gp)");
         addInst("lb $t1, " + tail.getOffset() + "($gp)");
@@ -287,6 +303,7 @@ public class Translator {
 
         //increase tail
         addInst("addi $t1, $t1, 1");
+        //mod is a little delayed to be more efficient. see 4 instructions below
 
         //BEGIN arguments
 
@@ -299,6 +316,9 @@ public class Translator {
         addInst("li $s0, " + receiver.getReceiver().getArgumentsTotalSize());
         addInst("addiu $s1, $gp, " + mailbox.getOffset());
         addInst("li $s2, " + actor.getCapacity());
+
+        addInst("remu $t1, $t1, $s2"); // tail <- tail mod size
+
         addInst("move $s3, $t1");
 
         addInst("jal CopyToQueue");
