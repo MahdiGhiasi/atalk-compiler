@@ -3,19 +3,20 @@
 # Semantic Analysis: OK
 # Output: [Nothing]
 
-actor ActorName<1> # Actor definition
+actor ActorName<10> # Actor definition
 	# Actor variables(states) and receivers
 	receiver init()
 	    write(2+3)
-	    self << hello()
+	    self << hello(2, 999-5)
 	end
 
-	receiver hello()
-	    int x
+	receiver hello(int x, int z)
         int y
-	    x = 3-1
 	    y = 9
-	    write(x)
+        y = 10
+        write(x*y)
+	    #write(y)
+	    #write(z)
 	    # self << init()
 	end
 end

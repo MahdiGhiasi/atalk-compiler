@@ -446,7 +446,7 @@ public class Translator {
     }
 
     public void popChar(boolean wannaPopTwo) {          // will save into v0 or (v1 and v0)
-        
+        addInst("# pop " + (wannaPopTwo ? "2 chars" : "1 char"));
         if(wannaPopTwo) {
             addInst("lb $v1, 1($sp)");
             addInst("lb $v0, 2($sp)");
@@ -459,6 +459,7 @@ public class Translator {
     }
 
     public void popInt(boolean wannaPopTwo) {          // will save into v0 or (v1 and v0)
+        addInst("# pop " + (wannaPopTwo ? "2 ints" : "1 int"));
         int rep = 1;
         if(wannaPopTwo)
             rep++;
@@ -500,6 +501,74 @@ public class Translator {
                 addInst("sub $t0, $v0, $v1");
                 pushIntReg("$t0");
             }
+            else if (op.equals("*")) {
+                addInst("mul $t0, $v0, $v1");
+                pushIntReg("$t0");
+            }
+            else if (op.equals("/")) {
+                addInst("div $t0, $v0, $v1");
+                pushIntReg("$t0");
+            }
+            else if (op.equals("and")) {
+                addInst("and $t0, $v0, $v1");
+                pushIntReg("$t0");
+            }
+            else if (op.equals("or")) {
+                addInst("or $t0, $v0, $v1");
+                pushIntReg("$t0");
+            }
+            else if (op.equals("<")) {
+                int label = getNextUniqueNum();
+                addInst("sub $t0, $v0, $v1");
+                addInst("bgez $t0, notLess_" + label);
+                pushInt(1);
+                addInst("j less_" + label);
+                addInst("notLess_" + label + ":");
+                pushInt(0);
+                addInst("less_" + label + ":");
+            }
+            else if (op.equals(">")) {
+                int label = getNextUniqueNum();
+                addInst("sub $t0, $v0, $v1");
+                addInst("blez $t0, notGreater_" + label);
+                pushInt(1);
+                addInst("j greater_" + label);
+                addInst("notGreater_" + label + ":");
+                pushInt(0);
+                addInst("greater_" + label + ":");
+            }
+            else if (op.equals("==")) {
+                int label = getNextUniqueNum();
+                addInst("sub $t0, $v0, $v1");
+                addInst("bnez $t0, notEqual_" + label);
+                pushInt(1);
+                addInst("j equal_" + label);
+                addInst("notEqual_" + label + ":");
+                pushInt(0);
+                addInst("equal_" + label + ":");
+            }
+            else if (op.equals("<>")) {
+                int label = getNextUniqueNum();
+                addInst("sub $t0, $v0, $v1");
+                addInst("bnez $t0, notEqual_" + label);
+                pushInt(0);
+                addInst("j equal_" + label);
+                addInst("notEqual_" + label + ":");
+                pushInt(1);
+                addInst("equal_" + label + ":");
+            }
+            else if (op.equals("--")) {
+                addInst("neg $t0, $v0");
+                pushIntReg("$t0");
+            }
+            else if (op.equals("not")) {
+                addInst("not $t0, $v0");
+                pushIntReg("$t0");
+            }
+            else {
+                addInst("################################# unrecognized operator " + op + " #####################################");
+
+            }
         }
         addInst("");
     }
@@ -522,6 +591,12 @@ public class Translator {
         else {
             addInst("##################### assignment of type " + type.toString() + " not supported ###############################");
         }
+    }
+
+    public void assign(SymbolTableVariableItemBase v) {
+        ArrayList<SymbolTableVariableItemBase> vs = new ArrayList<SymbolTableVariableItemBase>();
+        vs.add(v);
+        assign(vs.toArray(new SymbolTableVariableItemBase[vs.size()]), v.getVariable().getType());
     }
 
     public void addSystemCall(int x){

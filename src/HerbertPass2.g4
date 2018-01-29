@@ -118,11 +118,20 @@ var_def
 var_def_inside
     :
         (
-		(var_name = ID)
+		    (var_name = ID) { SymbolTable.define(); }
 		|
-        (var_name = ID ('=' var_initial_value))
+            (var_name = ID ('=' var_initial_value))
+            {
+                SymbolTable.define();
+                String ssvv = $var_name.text;
+                SymbolTableItem vv0 = SymbolTable.top.get($var_name.text);
+                if (vv0 != null && vv0 instanceof SymbolTableVariableItemBase) {
+                    SymbolTableVariableItemBase vvv = (SymbolTableVariableItemBase)vv0;
+                    mips.assign(vvv);
+                }
+            }
         )       
-        { SymbolTable.define(); }
+
 
     ;
 
@@ -551,7 +560,7 @@ lvl3 returns [Type return_type]
                 exprFlag = 1;//print("l3");
                 if ($t1.return_type instanceof IntType) {
                     mips.popInt(false);
-                    mips.doOperation($op.text, "int");
+                    mips.doOperation((($op.text == "-") ? "--" : $op.text), "int");
                     $return_type = IntType.getInstance();
                 } 
                 else if ($t1.return_type instanceof NoType) {
