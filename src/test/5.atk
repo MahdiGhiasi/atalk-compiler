@@ -3,6 +3,16 @@
 # Semantic Analysis: OK
 # Output: [Nothing]
 
-actor ActorName<4> # Actor definition
+actor ActorName<1> # Actor definition
 	# Actor variables(states) and receivers
+	receiver init()
+	    write(2+3)
+	    self << hello()
+	end
+
+	receiver hello()
+	    write(1)
+	    # self << init()
+	end
 end
+

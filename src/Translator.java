@@ -392,6 +392,18 @@ public class Translator {
         for(int i = 3; i >= 0; i--) addToStack(result[i]);
     }
 
+    public void pushIntReg(String reg) {
+        addInst("lw $a0, 0($gp)"); //backup M[0]
+        addInst("sw " + reg + ", 0($gp)");
+        for (int i = 0; i < 4; i++) {
+            addInst("addi $a1, $gp, " + i);
+            addInst("lb $a2, 0($a1)");
+            addInst("sb $a2, " + (-i) + "($sp)");
+        }
+        addInst("addi $sp, $sp, -4");
+        addInst("sw $a0, 0($gp)"); //restore M[0]
+    }
+
     public void pushString(String x) {
         for(int i = 0; i < x.length(); i++)
             addToStack((byte)x.charAt(i));
@@ -441,7 +453,16 @@ public class Translator {
     }
 
     public void doOperation(String op, String out) {
-
+        if (out.equals("int")) {
+            if (op.equals("+")) {
+                addInst("add $t0, $v0, $v1");
+                pushIntReg("$t0");
+            }
+            else if (op.equals("-")) {
+                addInst("sub $t0, $v0, $v1");
+                pushIntReg("$t0");
+            }
+        }
     }
 
     public void addSystemCall(int x){
