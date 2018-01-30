@@ -6,7 +6,8 @@
 actor ActorName<10> # Actor definition
 	# Actor variables(states) and receivers
 	receiver init()
-	    write(2+3)
+	    write(2+3*3)
+	    write(2*3+3)
 	    self << hello(2, 999-5)
 	end
 

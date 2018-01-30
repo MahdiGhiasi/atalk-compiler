@@ -395,42 +395,42 @@ lvl9
     :
 		(lvl8)
 		|
-        (lvl8 (op='or' lvl8)+)
+        (lvl8 (op='or' lvl9))
     ;
 
 lvl8
     :
 		(lvl7)
 		|
-        (lvl7 (op='and' lvl7)+)
+        (lvl7 (op='and' lvl8))
     ;
 
 lvl7
     :
 		(lvl6)
 		|
-        (lvl6 (op=('==' | '<>')lvl6)+)
+        (lvl6 (op=('==' | '<>')lvl7))
     ;
 
 lvl6
     :
 		(lvl5)
 		|
-        (lvl5 ( op=('<' | '>') lvl5)+)
+        (lvl5 ( op=('<' | '>') lvl6))
     ;
 
 lvl5
     :
 		(lvl4)
 		|
-        (lvl4 (op=('+' | '-')lvl4)+)
+        (lvl4 (op=('+' | '-')lvl5))
     ;
 
 lvl4
     :
 		(lvl3)
 		|
-        (lvl3(op=('*'|'/')lvl3)+)
+        (lvl3(op=('*'|'/')lvl4))
     ;
 
 lvl3

@@ -379,7 +379,7 @@ lvl9 returns [Type return_type]
     :
 		(t = lvl8 { $return_type = $t.return_type; })
 		|
-        (t1=lvl8 (op='or' t2=lvl8)+)
+        (t1=lvl8 (op='or' t2=lvl9))
             { 
                 exprFlag = 1; //print("l9");
                 if (($t1.return_type instanceof IntType) && ($t2.return_type instanceof IntType)) {
@@ -401,7 +401,7 @@ lvl8 returns [Type return_type]
     :
 		(t = lvl7 { $return_type = $t.return_type; })
 		|
-        (t1=lvl7 (op='and' t2=lvl7)+)
+        (t1=lvl7 (op='and' t2=lvl8))
             { 
                 exprFlag = 1; //print("l8");
                 if (($t1.return_type instanceof IntType) && ($t2.return_type instanceof IntType)) {
@@ -423,7 +423,7 @@ lvl7 returns [Type return_type]
     :
 		(t = lvl6 { $return_type = $t.return_type; })
 		|
-        (t1=lvl6 (op=('==' | '<>')t2=lvl6)+)
+        (t1=lvl6 (op=('==' | '<>')t2=lvl7))
             { 
                 exprFlag = 1; //print("l7");
                 
@@ -456,7 +456,7 @@ lvl6 returns [Type return_type]
     :
 		(t = lvl5 { $return_type = $t.return_type; })
 		|
-        (t1=lvl5 ( op=('<' | '>') t2=lvl5)+) { exprFlag = 1; }
+        (t1=lvl5 ( op=('<' | '>') t2=lvl6)) { exprFlag = 1; }
             { 
                 exprFlag = 1; //print("l6");
                 if (($t1.return_type instanceof IntType) && ($t2.return_type instanceof IntType)) {
@@ -483,7 +483,7 @@ lvl5 returns [Type return_type]
     :
 		(t = lvl4 { $return_type = $t.return_type; })
 		|
-        (t1=lvl4 (op=('+' | '-')t2=lvl4)+) 
+        (t1=lvl4 (op=('+' | '-')t2=lvl5))
             { 
                 exprFlag = 1; //print("l5");
                 Type stringType = new ArrayType(CharType.getInstance(), 1);
@@ -533,7 +533,7 @@ lvl4 returns [Type return_type]
     :
 		(t = lvl3 { $return_type = $t.return_type; })
 		|
-        (t1=lvl3(op=('*'|'/')t2=lvl3)+) 
+        (t1=lvl3(op=('*'|'/')t2=lvl4))
             {
                 exprFlag = 1;//print("l4");
                 if (($t1.return_type instanceof IntType) && ($t2.return_type instanceof IntType)) {
