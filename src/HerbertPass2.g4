@@ -278,20 +278,45 @@ send
     ;
 
 if_block
+@init {
+    int uniqueId = mips.getNextUniqueNum();
+    int ifBlockCounter = 0;
+}
     :
-        (l=IF exp=expression EOS+ block
+        (l=IF exp=expression EOS+
+            {
+                ifBlockCounter = 0;
+                mips.ifBegin(uniqueId);
+            }
+
+        block
             {
                 if ((!($exp.return_type instanceof IntType)) && (!($exp.return_type instanceof NoType)))
                     print("[Line #" + $l.line + "] Type '" + $exp.return_type.toString() + "' cannot be used as a condition.");
             }
-         (l=ELSEIF exp=expression EOS+ block
+         (l=ELSEIF
+         {
+             ifBlockCounter++;
+             mips.ifElseifStatement1(uniqueId, ifBlockCounter);
+         }
+         exp=expression EOS+ {mips.ifElseifStatement2(uniqueId, ifBlockCounter);}  block
             {
                 if ((!($exp.return_type instanceof IntType)) && (!($exp.return_type instanceof NoType)))
                     print("[Line #" + $l.line + "] Type '" + $exp.return_type.toString() + "' cannot be used as a condition.");
+
+
             }
-         )* 
-         (ELSE EOS+ block)? 
+         )*
+          {
+              ifBlockCounter++;
+              mips.ifElseStatement(uniqueId, ifBlockCounter);
+          }
+         (ELSE EOS+ block)?
          END EOS+)
+         {
+            ifBlockCounter++;
+             mips.ifFinish(uniqueId, ifBlockCounter);
+         }
     ;
 
 foreach_block
@@ -629,7 +654,9 @@ write_function
 read_function returns [Type return_type] 
     :
         (READ '(' len=CONST_INT ')')
-        { $return_type = new ArrayType(CharType.getInstance(), 1); }
+        {
+            $return_type = new ArrayType(CharType.getInstance(), 1);
+        }
     ;
 
 initial_value returns [Type return_type] 

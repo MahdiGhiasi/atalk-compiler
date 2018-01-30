@@ -346,6 +346,12 @@ public class Translator {
         printInteger();
     }
 
+    public void readInteger() {
+        addInst("#reading int");
+        this.addSystemCall(5);
+        pushIntReg("$v0");
+    }
+
     public void addToStack(byte x){
         addInst("# adding a number to stack");
         addInst("li $a0, " + x);
@@ -694,6 +700,35 @@ public class Translator {
 
     public void printInteger() { // prints integer located at $a0
         this.addSystemCall(1);
+    }
+
+    public void ifBegin(int uid) {
+        addInst("# if statement");
+        popInt(false);
+        addInst("beqz $v0, ifStatement_" + uid + "_1");
+
+    }
+
+    public void ifElseifStatement1(int uid, int ctr) {
+        addInst("j ifStatement_" + uid + "_final");
+        addInst("# if elseif clause");
+        addInst("ifStatement_" + uid + "_" + ctr + ":");
+    }
+
+    public void ifElseifStatement2(int uid, int ctr) {
+        popInt(false);
+        addInst("beqz $v0, ifStatement_" + uid + "_" + (ctr + 1));
+    }
+
+    public void ifElseStatement(int uid, int ctr) {
+        addInst("j ifStatement_" + uid + "_final");
+        addInst("# if else clause");
+        addInst("ifStatement_" + uid + "_" + ctr + ":");
+    }
+
+    public void ifFinish(int uid, int ctr) {
+        addInst("# if finished");
+        addInst("ifStatement_" + uid + "_final:");
     }
 }
 

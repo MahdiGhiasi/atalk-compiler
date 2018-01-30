@@ -5,10 +5,23 @@
 
 actor ActorName<10> # Actor definition
 	# Actor variables(states) and receivers
+
+	int x
+
 	receiver init()
-	    write(2+3*3)
-	    write(2*3+3)
-	    self << hello(2, 999-5)
+	    #write(2+3*3)
+	    #write(2*3+3)
+	    #self << hello(2, 999-5)
+        x = 1
+	    if (x > 0)
+	        write(1)
+	    elseif (x == 2)
+	        write(2)
+	    elseif (x == 3)
+	        write(3)
+	    else
+	        write(4)
+	    end
 	end
 
 	receiver hello(int x, int z)
