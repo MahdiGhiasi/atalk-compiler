@@ -585,7 +585,7 @@ lvl3 returns [Type return_type]
                 exprFlag = 1;//print("l3");
                 if ($t1.return_type instanceof IntType) {
                     mips.popInt(false);
-                    mips.doOperation((($op.text == "-") ? "--" : $op.text), "int");
+                    mips.doOperation((($op.text.equals("-")) ? "--" : $op.text), "int");
                     $return_type = IntType.getInstance();
                 } 
                 else if ($t1.return_type instanceof NoType) {

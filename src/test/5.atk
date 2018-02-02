@@ -12,23 +12,28 @@ actor ActorName<10> # Actor definition
 	    #write(2+3*3)
 	    #write(2*3+3)
 	    #self << hello(2, 999-5)
-        x = 1
-	    if (x > 0)
+        x = -1
+	    if (x < 0)
 	        write(1)
+	        self << hello(x, 4)
 	    elseif (x == 2)
 	        write(2)
+	        self << hello(x, 3)
 	    elseif (x == 3)
 	        write(3)
+	        self << hello(x, 2)
 	    else
 	        write(4)
+	        self << hello(x, 1)
 	    end
+
 	end
 
 	receiver hello(int x, int z)
         int y
 	    y = 9
         y = 10
-        write(x*y)
+        write(x*(y + z))
 	    #write(y)
 	    #write(z)
 	    # self << init()
